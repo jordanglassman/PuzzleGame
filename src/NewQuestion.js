@@ -6,23 +6,29 @@ class NewQuestion extends Component {
 
         this.state = {
             title: '',
-            questionText: 'Enter question...'
+            question: 'Enter question...',
+            answer: ''
         };
 
         this.handleQuestionTextChange = this.handleQuestionTextChange.bind(this);
         this.handleTitleChange = this.handleTitleChange.bind(this);
+        this.handleAnswerChange = this.handleAnswerChange.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
-        this.clearDefault = this.clearDefault.bind(this);
+        this.clearDefaultQuestionText = this.clearDefaultQuestionText.bind(this);
     }
 
-    clearDefault() {
-        if(this.state.questionText === 'Enter question...') {
-            this.setState({questionText: ''});
+    clearDefaultQuestionText() {
+        if(this.state.question === 'Enter question...') {
+            this.setState({question: ''});
         }
     }
 
+    handleAnswerChange(event) {
+        this.setState({answer: event.target.value});
+    }
+
     handleQuestionTextChange(event) {
-        this.setState({questionText: event.target.value});
+        this.setState({question: event.target.value});
     }
 
     handleTitleChange(event) {
@@ -30,16 +36,10 @@ class NewQuestion extends Component {
     }
 
     handleSubmit(event) {
-        // validate question
-
-        const keccak = require('keccak')
-        let questionHash = keccak('keccak256').update(this.state.questionText).digest('hex');
-
         this.props.onCreateQuestion({
-            id: 'lolid',
-            name: this.state.title,
-            value: this.state.questionText,
-            hash: questionHash
+            title: this.state.title,
+            question: this.state.question,
+            answer: this.state.answer,
         });
 
         event.preventDefault();
@@ -51,7 +51,8 @@ class NewQuestion extends Component {
             <div>
                 <form onSubmit={this.handleSubmit}>
                     <label>Title: <input type="text" value={this.state.title} onChange={this.handleTitleChange} /></label>
-                    <label>Enter question: <textarea value={this.state.questionText} onClick={this.clearDefault} onChange={this.handleQuestionTextChange} /></label>
+                    <label>Question: <textarea value={this.state.question} onClick={this.clearDefaultQuestionText} onChange={this.handleQuestionTextChange} /></label>
+                    <label>Answer: <textarea value={this.state.answer} onChange={this.handleAnswerChange} /></label>
                     <input type="submit" value="Submit" />
                 </form>
             </div>

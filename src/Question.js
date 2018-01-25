@@ -10,10 +10,10 @@ class Question extends Component {
         const question = this.props.question;
         return (
             <tr>
-                <td>{question.id}</td>
-                <td>{question.name}</td>
-                <td>{question.value}</td>
-                <td>{question.hash}</td>
+                <td>{question._id}</td>
+                <td>{question.title}</td>
+                <td>{question.question}</td>
+                <td>{question.questionHash}</td>
                 <td><AnswerQuestionButton question={question} onClickAnswerQuestion={this.props.onClickAnswerQuestion} text='Answer Question' /></td>
             </tr>
         );

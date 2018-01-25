@@ -1,32 +1,28 @@
 import PuzzleGame from '../../build/contracts/PuzzleGame.json'
 
-let contract = {
-    truffleContract: require('truffle-contract'),
-    init: function(web3) {
-        this.puzzleGame = this.truffleContract(PuzzleGame);
-        this.puzzleGame.setProvider(web3.currentProvider);
-        this.puzzleGame.defaults({from: web3.eth.accounts[0], gas:2000000});
-        console.log(PuzzleGame);
-        console.log(PuzzleGame.defaults);
-        console.log(this.puzzleGame);
-    },
-    newQuestion: function() {
-        let pg;
+let truffleContract = require('truffle-contract');
+let puzzleGame = truffleContract(PuzzleGame);
 
-        this.puzzleGame.deployed().then((instance) => {
-            pg = instance;
-            console.log(pg);
-            pg.newQuestion(12, 23, {value:10}).then(function(result) {
-                console.log(result);
-            }).catch(function(result) {
-                console.log(result);
-            })
-        }).then(function(result) {
-            pg.getQuestions().then(function(result) {
-                console.log(result.map(q => q.toNumber()));
-            });
-        });
-    }
+exports.init = function(web3) {
+    puzzleGame.setProvider(web3.currentProvider);
 };
 
-export default contract
+exports.newQuestion = function(questionHash, answerHash, account, callback, errorCallback) {
+    puzzleGame.deployed().then((instance) => {
+        instance.newQuestion(questionHash, answerHash, {from: account, value:10, gas: 2000000}).then(function(result) {
+            callback(result);
+        }).catch(function(error) {
+            errorCallback(error);
+        })
+    });
+};
+
+exports.getQuestions = function(callback, errorCallback) {
+    puzzleGame.deployed().then((instance) => {
+        instance.getQuestions().then(function(result) {
+            callback(result);
+        }).catch(function(error) {
+            errorCallback(error);
+        })
+    });
+};

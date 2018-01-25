@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import getWeb3 from './utils/getWeb3'
 import contractLib from './utils/contractLib'
 
-import Header from './Header.js';
+import PuzzleGameHeader from './PuzzleGameHeader.js';
 import QuestionList from './QuestionList.js';
 import NewQuestion from './NewQuestion.js';
 import NewQuestionButton from './NewQuestionButton.js';
@@ -14,6 +14,8 @@ const AppState = {
     NEW_QUESTION: 1,
     ANSWER_QUESTION: 2
 };
+
+import {Segment} from "semantic-ui-react";
 
 import './css/oswald.css'
 import './css/open-sans.css'
@@ -37,7 +39,8 @@ class App extends Component {
           appState: AppState.QUESTION_LIST,
           previousAppState: null,
           questions: [],
-          currentQuestion: null
+          currentQuestion: null,
+          account: null
       };
 
       this.handleNewQuestionClick = this.handleNewQuestionClick.bind(this);
@@ -55,27 +58,34 @@ class App extends Component {
                 });
 
                 contractLib.init(this.state.web3);
-                contractLib.newQuestion();
+                contractLib.getQuestions(
+                    result => {
+                        result.forEach(q => {
+                            fetch("http://localhost:3001/questions/" + q, {
+                                method: 'GET'
+                            }).then(res => {
+                                if(res.ok) {
+                                    res.json().then(json => {
+                                        this.state.questions.push(json);
+                                        this.setState({
+                                            appState: AppState.QUESTION_LIST
+                                        });
+                                    });
+                                }
+                            }).catch(error => {
+                                return this.setState({error: error});
+                            });
+                        });
+                    }, error => {
+                        return this.setState({error});
+                    });
+
+                this.setState({account: this.state.web3.eth.accounts[0]});
             })
-            .catch((e) => {
-                console.log(e);
-                console.log('Error finding web3.')
+            .catch((error) => {
+                this.setState({error})
             });
-
-      // fetch questions from contract
-      // cache somehow
-
-      for(let i = 0; i < 10; i++) {
-          this.state.questions.push(
-              {
-                  id: 'id' + i,
-                  name: 'name' + i,
-                  value: i,
-                  hash: 'hash' + i
-              }
-          );
-      }
-  }
+    }
 
     handleNewQuestionClick() {
         this.setState({
@@ -92,13 +102,29 @@ class App extends Component {
     }
 
     handleCreateQuestion(question) {
-        for (var i = 0; i < this.state.questions.length; i++) {
-            if(this.state.questions[i].hash === question.hash) {
-                alert('question exists');
-                return;
+        fetch("http://localhost:3001/questions", {
+            method: 'POST',
+            body: JSON.stringify(question),
+            headers: new Headers({
+                'Content-Type': 'application/json'
+            })
+        }).then(res => {
+            if(res.ok) {
+                res.json().then(json => {
+                    contractLib.newQuestion(json.questionHash, json.answerHash, this.state.account,
+                        txResult => this.setState({txStatus: txResult}),
+                        error => {
+                            return this.setState({error: error});
+                        });
+
+                    // TODO: refresh question list more efficiently
+                    this.state.questions.push(json);
+                    this.setState({
+                        appState: AppState.QUESTION_LIST
+                    });
+                });
             }
-        }
-        this.state.questions.push(question);
+        }).catch(error => this.setState({ error: error }));
     }
 
     handleAnswerQuestion(question) {
@@ -124,6 +150,19 @@ class App extends Component {
         const appState = this.state.appState;
         let currentAppComponent = null;
 
+        if(this.state.error) {
+            console.log(this.state.error);
+        }
+
+        let error = <Segment inverted color='red'>
+                {this.state.error && this.state.error.message}
+            </Segment>;
+
+        console.log(this.state.txStatus);
+        let txStatus = <Segment inverted color='red'>
+            {this.state.txStatus && 'tx: ' + this.state.txStatus.tx}
+        </Segment>;
+
         if (appState === AppState.NEW_QUESTION) {
             currentAppComponent = (
                 <div>
@@ -148,7 +187,9 @@ class App extends Component {
 
         return (
             <div className="App">
-                <Header/>
+                <PuzzleGameHeader/>
+                {error}
+                {txStatus}
                 {currentAppComponent}
                 <BackButton onClick={this.handleBackClick} />
             </div>

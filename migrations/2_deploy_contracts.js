@@ -1,7 +1,7 @@
-var SimpleStorage = artifacts.require("./SimpleStorage.sol");
 var PuzzleGame = artifacts.require("./PuzzleGame.sol");
+var Bytes = artifacts.require("./Bytes.sol");
 
 module.exports = function(deployer) {
-  deployer.deploy(SimpleStorage);
-  deployer.deploy(PuzzleGame);
+  deployer.deploy(PuzzleGame, {value: 10});
+  deployer.deploy(Bytes);
 };
